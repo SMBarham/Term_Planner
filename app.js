@@ -17,6 +17,38 @@ const textBold=document.getElementById('textBold');
 let textBoldOn=false;
 const FONT_MAP={centaur:'Centaur, \"Times New Roman\", Georgia, serif',caveat:'\"Caveat\", cursive',darker:'\"Darker Grotesque\", sans-serif'};
 
+
+// v16 diagnostic instrumentation: observe what Android/Chrome actually sends.
+const inputDiag=document.getElementById('inputDiag');
+const diagCounts={pointerdown:0,pointermove:0,pointerup:0,touchstart:0,touchmove:0,touchend:0};
+function diagTarget(e){
+  const t=e.target;
+  if(!t)return 'none';
+  if(t.classList?.contains('ink-layer'))return 'canvas';
+  if(t.classList?.contains('text-note'))return 'text';
+  if(t.classList?.contains('page-view'))return 'page';
+  return (t.id||t.className||t.tagName||'unknown').toString().slice(0,30);
+}
+function showDiag(kind,e){
+  if(diagCounts[kind]!==undefined)diagCounts[kind]++;
+  const pt=('pointerType' in e)?e.pointerType:'-';
+  const touches=('touches' in e)?e.touches.length:'-';
+  const buttons=('buttons' in e)?e.buttons:'-';
+  inputDiag.textContent=
+    `v16 DIAG | ${kind} | pointer=${pt} | touches=${touches} | buttons=${buttons} | target=${diagTarget(e)} | `+
+    `PD:${diagCounts.pointerdown} PM:${diagCounts.pointermove} TD:${diagCounts.touchstart} TM:${diagCounts.touchmove}`;
+}
+['pointerdown','pointermove','pointerup'].forEach(type=>{
+  document.addEventListener(type,e=>{
+    if(e.target?.closest?.('.page-view'))showDiag(type,e);
+  },{capture:true,passive:true});
+});
+['touchstart','touchmove','touchend'].forEach(type=>{
+  document.addEventListener(type,e=>{
+    if(e.target?.closest?.('.page-view'))showDiag(type,e);
+  },{capture:true,passive:true});
+});
+
 // IndexedDB
 const dbPromise=new Promise((resolve,reject)=>{
   const req=indexedDB.open('term-planner-db',1);
