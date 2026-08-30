@@ -22,3 +22,7 @@ Annotations are saved locally on the device. Use the planner's Export annotation
 
 ## v5 fix
 Text formatting controls are now truly contextual: they only appear when the Text tool is active or an existing text box is selected. The service worker now prefers fresh GitHub files while online, using the cache only as an offline fallback, so development updates should require far less cache-clearing nonsense.
+
+
+## v6
+Existing text boxes can now be dragged to reposition them. Single click/tap selects; drag moves; double click edits.

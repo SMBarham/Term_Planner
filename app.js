@@ -52,7 +52,44 @@ class PageView{
       d.style.left=(t.x*100)+'%'; d.style.top=(t.y*100)+'%'; d.textContent=t.text;
       applyTextStyle(d,t);
       const select=()=>selectText(this,t,d);
-      d.addEventListener('pointerdown',e=>{e.stopPropagation();select();});
+      d.addEventListener('pointerdown',e=>{
+        e.stopPropagation();
+        select();
+        if(d.contentEditable==='true') return;
+        if(e.pointerType==='mouse'&&e.button!==0) return;
+
+        const r=this.textLayer.getBoundingClientRect();
+        const startX=e.clientX, startY=e.clientY;
+        const originalX=t.x, originalY=t.y;
+        let moving=false, snapshotted=false;
+        d.setPointerCapture?.(e.pointerId);
+
+        const move=ev=>{
+          const dxPx=ev.clientX-startX, dyPx=ev.clientY-startY;
+          if(!moving&&Math.hypot(dxPx,dyPx)>3) moving=true;
+          if(!moving) return;
+          ev.preventDefault();
+          if(!snapshotted){this.snapshot();snapshotted=true;}
+          t.x=Math.max(0,Math.min(.98,originalX+dxPx/r.width));
+          t.y=Math.max(0,Math.min(.98,originalY+dyPx/r.height));
+          d.style.left=(t.x*100)+'%';
+          d.style.top=(t.y*100)+'%';
+          d.classList.add('dragging');
+        };
+        const up=async ev=>{
+          d.removeEventListener('pointermove',move);
+          d.removeEventListener('pointerup',up);
+          d.removeEventListener('pointercancel',up);
+          d.classList.remove('dragging');
+          if(moving){
+            ev.preventDefault();
+            await this.save();
+          }
+        };
+        d.addEventListener('pointermove',move);
+        d.addEventListener('pointerup',up);
+        d.addEventListener('pointercancel',up);
+      });
       d.addEventListener('click',e=>{e.stopPropagation();select();});
       d.addEventListener('dblclick',e=>{e.stopPropagation();select();beginTextEdit(d,t,this);});
       d.addEventListener('input',()=>{t.text=d.innerText;});
