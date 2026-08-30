@@ -17,14 +17,14 @@ button:active{transform:translateY(1px)}
 .topbar{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 max(12px,env(safe-area-inset-left));background:var(--bar);backdrop-filter:blur(14px);border-bottom:1px solid rgba(52,34,63,.12);z-index:20}
 .brand{font-weight:700}.brand span{font-weight:500;opacity:.65;margin-left:.35rem}
 .top-actions{display:flex;gap:.2rem}
-.viewport{position:relative;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 88px}
+.viewport{position:relative;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 88px;touch-action:none}
 .pages-host{min-height:100%;display:flex;justify-content:center;align-items:flex-start;gap:12px}
-.page-view{position:relative;flex:0 1 auto;background:white;box-shadow:var(--shadow);border-radius:8px;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:pan-x pan-y;max-width:min(94vw,850px)}
+.page-view{position:relative;flex:0 1 auto;background:white;box-shadow:var(--shadow);border-radius:8px;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;max-width:min(94vw,850px)}
 .pages-host.spread .page-view{max-width:calc((100vw - 42px)/2)}
 .page-view img{display:block;width:100%;height:auto;pointer-events:none}
-.ink-layer{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-x pan-y;cursor:crosshair}
+.ink-layer{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .text-layer{position:absolute;inset:0;pointer-events:none}
-.text-note{position:absolute;min-width:80px;min-height:28px;padding:3px 5px;border:1px dashed rgba(109,58,168,.45);border-radius:5px;background:rgba(255,255,255,.38);color:var(--ink);font-size:16px;line-height:1.25;pointer-events:auto;white-space:pre-wrap;outline:none}
+.text-note{position:absolute;min-width:80px;min-height:28px;padding:3px 5px;border:1px dashed rgba(109,58,168,.45);border-radius:5px;background:rgba(255,255,255,.38);color:var(--ink);font-size:16px;line-height:1.25;pointer-events:auto;white-space:pre-wrap;outline:none;touch-action:none}
 .text-note:focus{background:rgba(255,255,255,.78);border-style:solid}
 .pager{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);height:48px;background:var(--bar);box-shadow:var(--shadow);border:1px solid rgba(52,34,63,.12);border-radius:18px;padding:5px;display:flex;align-items:center;gap:8px;z-index:30;backdrop-filter:blur(14px)}
 .pager button{width:40px;height:38px;padding:0;font-size:1.7rem;line-height:1}
@@ -89,3 +89,6 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
   box-shadow: none !important;
 }
 
+
+/* v13: custom tablet gestures own page interaction. */
+.viewport.two-finger-panning{cursor:grabbing}
