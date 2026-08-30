@@ -228,7 +228,9 @@ class PageView{
           activeView=this;e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();
         });
         d.addEventListener('touchstart',e=>{
-          activeView=this;e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+          activeView=this;e.stopPropagation();
+          setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+          d.focus({preventScroll:true});
         },{passive:true});
         d.addEventListener('input',()=>{
           t.text=d.value;
@@ -414,6 +416,7 @@ viewport.addEventListener('touchmove',e=>{
     return;
   }
   if(e.touches.length===1){
+    if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
     if(document.activeElement?.matches?.('textarea.text-note'))return;
     e.preventDefault();
     activeView?.moveFinger(e.touches[0]);
@@ -421,6 +424,7 @@ viewport.addEventListener('touchmove',e=>{
 },{capture:true,passive:false});
 
 viewport.addEventListener('touchend',e=>{
+  if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
   if(document.activeElement?.matches?.('textarea.text-note'))return;
   e.preventDefault();
   if(fingerGesture){
@@ -435,6 +439,7 @@ viewport.addEventListener('touchend',e=>{
 },{capture:true,passive:false});
 
 viewport.addEventListener('touchcancel',e=>{
+  if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
   e.preventDefault();
   fingerGesture=null;viewport.classList.remove('two-finger-panning');
   activeView?.endFinger();
