@@ -214,7 +214,15 @@ class PageView{
         }
         if(currentTool==='text'){setSelection(this,[],[t.id]);syncTextControlsFromSelection();}
       });
-      d.addEventListener('click',e=>{e.stopPropagation();if(currentTool==='select'||currentTool==='text'){setSelection(this,[],[t.id]);syncTextControlsFromSelection();}});
+      d.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(currentTool==='select'){
+          setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+        }else if(currentTool==='text'){
+          setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+          beginTextEdit(d,t,this);
+        }
+      });
       d.addEventListener('dblclick',e=>{e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();beginTextEdit(d,t,this);});
       d.addEventListener('input',()=>{t.text=d.innerText;});
       d.addEventListener('blur',()=>{if(d.contentEditable==='true'){t.text=d.innerText;d.contentEditable='false';this.save();}});
@@ -222,7 +230,13 @@ class PageView{
       this.textLayer.appendChild(d);
     }
     this.updateSelectionVisual();
-    if(focusNewest){const last=this.textLayer.lastElementChild;const t=this.data.texts.at(-1);if(last&&t){setSelection(this,[],[t.id]);syncTextControlsFromSelection();beginTextEdit(last,t,this,true);}}
+    if(focusNewest){
+      const last=this.textLayer.lastElementChild;const t=this.data.texts.at(-1);
+      if(last&&t){
+        setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+        if(!matchMedia('(pointer: coarse)').matches)beginTextEdit(last,t,this,true);
+      }
+    }
   }
   updateSelectionVisual(){
     this.textLayer.querySelectorAll('.text-note').forEach(n=>n.classList.toggle('selected',selection.view===this&&selection.textIds.has(n.dataset.id)));
@@ -333,6 +347,8 @@ viewport.addEventListener('touchstart',e=>{
     return;
   }
   if(e.touches.length===1){
+    const isTextNote=currentTool==='text'&&e.target?.closest?.('.text-note');
+    if(isTextNote)return;
     e.preventDefault();
     const v=pageViewFromTarget(e.target);
     if(v)v.beginFinger(e.touches[0],e.target);

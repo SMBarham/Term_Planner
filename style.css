@@ -94,3 +94,10 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
 /* v15 tablet test */
 .viewport.two-finger-panning{cursor:grabbing}
 .build-badge{font-size:.7rem;opacity:.55;margin-left:.4rem;font-weight:600}
+
+/* v16: Android text editing */
+.text-note[contenteditable="true"]{
+  caret-color:var(--ink);
+  -webkit-user-select:text;
+  user-select:text;
+}
