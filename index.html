@@ -44,8 +44,14 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.2 17.8-4-4a2 2 0 0 1 0-2.8l7.1-7.1a2 2 0 0 1 2.8 0l5.9 5.9a2 2 0 0 1 0 2.8l-5.2 5.2H8.2Z"/><path d="m10 8 6 6"/><path d="M8.2 17.8h11.2"/></svg>
     </button>
     <button data-tool="text" class="tool text-tool" title="Add text" aria-label="Add text"><span class="hand-T">T</span></button>
+    <button data-tool="select" class="tool" title="Select / lasso / move" aria-label="Select, lasso or move annotations">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5 18.5 12 12 13.5 9 20.5 5 3.5Z"/><path d="m12 13.5 4.5 5"/></svg>
+    </button>
     <button id="undoBtn" class="tool" title="Undo" aria-label="Undo">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4.5 11.5 9 16"/><path d="M5 11.5h8.5a5.5 5.5 0 0 1 5.5 5.5"/></svg>
+    </button>
+    <button id="deleteSelectionBtn" class="tool selection-only" title="Delete selected item" aria-label="Delete selected item" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/><path d="M10 11v5M14 11v5"/></svg>
     </button>
     <label class="size-control pen-only" title="Pen size"><input id="penSize" type="range" min="1" max="12" value="3" /></label>
     <input id="penColor" type="color" value="#34223f" title="Ink / text colour" />

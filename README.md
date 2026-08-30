@@ -26,3 +26,13 @@ Text formatting controls are now truly contextual: they only appear when the Tex
 
 ## v6
 Existing text boxes can now be dragged to reposition them. Single click/tap selects; drag moves; double click edits.
+
+
+## v7 additions
+- Contextual trash button for selected text or handwriting.
+- Select tool (arrow) for a complete pen stroke: tap/click a stroke to select it, drag to move it, then use the trash button to delete it.
+- Desktop Delete/Backspace also deletes a selected pen stroke.
+
+
+## v8 selection
+The Select tool now works for both typed text and handwriting. Draw a freehand lasso around any combination of text boxes and pen strokes, then drag the selection together or delete it with the trash button. Clicking an individual item selects just that item.
