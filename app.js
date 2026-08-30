@@ -17,9 +17,8 @@ const textBold=document.getElementById('textBold');
 let textBoldOn=false;
 const FONT_MAP={centaur:'Centaur, \"Times New Roman\", Georgia, serif',caveat:'\"Caveat\", cursive',darker:'\"Darker Grotesque\", sans-serif'};
 
-const textEditDialog=document.getElementById('textEditDialog');
+const textEditBar=document.getElementById('textEditBar');
 const textEditArea=document.getElementById('textEditArea');
-const textEditForm=document.getElementById('textEditForm');
 let textEditState=null; // {view,textId,x,y,newText}
 
 
@@ -27,10 +26,21 @@ function openTextEditor(view,{textId=null,x=null,y=null}={}){
   activeView=view;
   const existing=textId ? view.data.texts.find(t=>t.id===textId) : null;
   textEditState={view,textId,x,y,newText:!existing};
-  textEditArea.value=existing?.text && existing.text!=='Type here' ? existing.text : '';
-  textEditDialog.showModal();
-  // Do not force Android's keyboard. The user taps the real textarea in the dialog,
-  // which is reliable and does not fight planner touch handlers.
+  textEditArea.value=existing?.text||'';
+  textEditArea.style.height='auto';
+  textEditBar.hidden=false;
+  requestAnimationFrame(()=>{
+    textEditArea.style.height=Math.min(120,Math.max(38,textEditArea.scrollHeight))+'px';
+    textEditArea.focus({preventScroll:true});
+    try{const end=textEditArea.value.length;textEditArea.setSelectionRange(end,end);}catch{}
+  });
+}
+function closeTextEditor(){
+  textEditState=null;
+  textEditBar.hidden=true;
+  textEditArea.blur();
+  textEditArea.value='';
+  textEditArea.style.height='';
 }
 async function commitTextEditor(){
   const s=textEditState;if(!s)return;
@@ -40,27 +50,17 @@ async function commitTextEditor(){
     const t=view.data.texts.find(x=>x.id===s.textId);
     if(t){
       view.snapshot();
-      if(value.trim()===''){
-        view.data.texts=view.data.texts.filter(x=>x.id!==s.textId);
-        clearSelection();
-      }else{
-        t.text=value;
-      }
+      if(value.trim()===''){view.data.texts=view.data.texts.filter(x=>x.id!==s.textId);clearSelection();}
+      else t.text=value;
     }
   }else if(value.trim()!==''){
     view.snapshot();
-    const t={
-      id:crypto.randomUUID(),
-      x:s.x,y:s.y,text:value,
-      font:textFont.value,size:Number(textSize.value||12),
-      bold:textBoldOn,color:penColor.value
-    };
-    view.data.texts.push(t);
-    setSelection(view,[],[t.id]);
+    const t={id:crypto.randomUUID(),x:s.x,y:s.y,text:value,font:textFont.value,size:Number(textSize.value||12),bold:textBoldOn,color:penColor.value};
+    view.data.texts.push(t);setSelection(view,[],[t.id]);
   }
   view.renderTexts();
   await view.save();
-  textEditState=null;
+  closeTextEditor();
 }
 
 // IndexedDB
@@ -496,7 +496,7 @@ viewport.addEventListener('touchend',e=>{
     return;
   }
 
-  if(textEditDialog.open)return;
+  if(!textEditBar.hidden)return;
   e.preventDefault();
   if(e.touches.length===0)activeView?.endFinger();
 },{capture:true,passive:false});
@@ -510,15 +510,9 @@ viewport.addEventListener('touchcancel',e=>{
 },{capture:true,passive:false});
 
 
-document.getElementById('textEditSave').addEventListener('click',async e=>{
-  e.preventDefault();
-  await commitTextEditor();
-  textEditDialog.close();
-});
-document.getElementById('textEditCancel').addEventListener('click',e=>{
-  textEditState=null;
-});
-textEditDialog.addEventListener('close',()=>{textEditState=null;});
+document.getElementById('textEditSave').addEventListener('click',async e=>{e.preventDefault();await commitTextEditor();});
+document.getElementById('textEditCancel').addEventListener('click',e=>{e.preventDefault();closeTextEditor();});
+textEditArea.addEventListener('input',()=>{textEditArea.style.height='auto';textEditArea.style.height=Math.min(120,Math.max(38,textEditArea.scrollHeight))+'px';});
 
 textBold.onclick=()=>{textBoldOn=!textBoldOn;textBold.classList.toggle('active',textBoldOn);applyControlsToSelected();};
 [textFont,textSize,penColor].forEach(el=>el.addEventListener('change',applyControlsToSelected));textSize.addEventListener('input',applyControlsToSelected);
@@ -543,6 +537,6 @@ document.getElementById('importInput').onchange=async e=>{const f=e.target.files
 document.getElementById('offlineBtn').onclick=()=>{document.getElementById('offlineStatus').textContent='All 145 planner pages are bundled into the app and cached automatically.';};
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))).catch(()=>{}));
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 }
 render();

@@ -147,3 +147,10 @@ textarea.text-note{
 }
 #textEditArea:focus{border-color:var(--purple)}
 .text-editor-actions{display:flex;justify-content:flex-end;gap:8px}
+
+/* v22: compact tablet text bar */
+.text-edit-bar{position:fixed;left:50%;bottom:max(76px,calc(env(safe-area-inset-bottom) + 72px));transform:translateX(-50%);z-index:60;width:min(680px,calc(100vw - 24px));display:flex;align-items:flex-end;gap:6px;padding:7px;border:1px solid rgba(52,34,63,.16);border-radius:16px;background:var(--bar);box-shadow:var(--shadow);backdrop-filter:blur(14px)}
+.text-edit-bar[hidden]{display:none!important}
+#textEditArea{flex:1;min-width:0;min-height:38px;max-height:120px;resize:none;overflow:auto;border:0;outline:0;border-radius:10px;background:rgba(255,255,255,.86);color:var(--ink);padding:7px 10px;font:20px/1.25 "Caveat",cursive;user-select:text;-webkit-user-select:text;touch-action:manipulation;caret-color:var(--ink)}
+.text-edit-icon{flex:0 0 38px;width:38px;height:38px;padding:0;border-radius:10px;font-size:1.25rem;line-height:1}
+.text-edit-icon.ghost{background:#eee8f4;color:var(--ink)}
