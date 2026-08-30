@@ -228,9 +228,9 @@ class PageView{
           activeView=this;e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();
         });
         d.addEventListener('touchstart',e=>{
-          activeView=this;e.stopPropagation();
-          setSelection(this,[],[t.id]);syncTextControlsFromSelection();
-          d.focus({preventScroll:true});
+          activeView=this;
+          setSelection(this,[],[t.id]);
+          syncTextControlsFromSelection();
         },{passive:true});
         d.addEventListener('input',()=>{
           t.text=d.value;
@@ -336,6 +336,7 @@ document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
 // Mouse/stylus continue to use Pointer Events above.
 // Two fingers always pan/pinch; one finger belongs to the active tool.
 let fingerGesture=null;
+let pendingTextTap=null;
 let pageZoom=Number(localStorage.getItem('planner-zoom')||1);
 const MIN_ZOOM=.75, MAX_ZOOM=3;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
@@ -379,8 +380,10 @@ function cancelFingerAnnotation(){
 function pageViewFromTarget(target){return views.find(v=>v.el===target.closest?.('.page-view'))||null;}
 
 viewport.addEventListener('touchstart',e=>{
+  // A second finger always means navigation, even if Text is active.
   if(e.touches.length>=2){
     e.preventDefault();e.stopPropagation();
+    pendingTextTap=null;
     cancelFingerAnnotation();
     const m=touchMetrics(e.touches),vr=viewport.getBoundingClientRect();
     fingerGesture={
@@ -391,11 +394,29 @@ viewport.addEventListener('touchstart',e=>{
     viewport.classList.add('two-finger-panning');
     return;
   }
+
   if(e.touches.length===1){
-    if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
-    e.preventDefault();
+    const touch=e.touches[0];
     const v=pageViewFromTarget(e.target);
-    if(v)v.beginFinger(e.touches[0],e.target);
+    if(!v)return;
+
+    if(currentTool==='text'){
+      // Do NOT create/focus on touchstart. Android may cancel focus when the
+      // gesture resolves, and this also used to create a box before finger 2
+      // arrived for pinch/pan. Treat it as a pending tap until touchend.
+      e.preventDefault();
+      pendingTextTap={
+        view:v,
+        target:e.target?.closest?.('.text-note')||null,
+        x:touch.clientX,
+        y:touch.clientY,
+        moved:false
+      };
+      return;
+    }
+
+    e.preventDefault();
+    v.beginFinger(touch,e.target);
   }
 },{capture:true,passive:false});
 
@@ -415,8 +436,17 @@ viewport.addEventListener('touchmove',e=>{
     viewport.scrollTop=fingerGesture.contentY*ratio-(m.y-vr.top);
     return;
   }
+
+  if(currentTool==='text'&&pendingTextTap&&e.touches.length===1){
+    e.preventDefault();
+    const t=e.touches[0];
+    if(Math.hypot(t.clientX-pendingTextTap.x,t.clientY-pendingTextTap.y)>10){
+      pendingTextTap.moved=true;
+    }
+    return;
+  }
+
   if(e.touches.length===1){
-    if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
     if(document.activeElement?.matches?.('textarea.text-note'))return;
     e.preventDefault();
     activeView?.moveFinger(e.touches[0]);
@@ -424,24 +454,75 @@ viewport.addEventListener('touchmove',e=>{
 },{capture:true,passive:false});
 
 viewport.addEventListener('touchend',e=>{
-  if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
-  if(document.activeElement?.matches?.('textarea.text-note'))return;
-  e.preventDefault();
   if(fingerGesture){
+    e.preventDefault();
     if(e.touches.length<2){
-      fingerGesture=null;viewport.classList.remove('two-finger-panning');
+      fingerGesture=null;
+      viewport.classList.remove('two-finger-panning');
       localStorage.setItem('planner-zoom',String(pageZoom));
       views.forEach(v=>v.resize());
     }
     return;
   }
+
+  if(currentTool==='text'&&pendingTextTap&&e.touches.length===0){
+    e.preventDefault();
+    const p=pendingTextTap;
+    pendingTextTap=null;
+    if(p.moved)return;
+
+    activeView=p.view;
+
+    if(p.target){
+      const id=p.target.dataset.id;
+      const t=p.view.data.texts.find(x=>x.id===id);
+      if(t){
+        setSelection(p.view,[],[id]);
+        syncTextControlsFromSelection();
+        // Real textarea + focus during the touchend user gesture.
+        p.target.focus({preventScroll:true});
+        try{
+          const end=p.target.value.length;
+          p.target.setSelectionRange(end,end);
+        }catch{}
+      }
+      return;
+    }
+
+    const pos=p.view.coordsXY(p.x,p.y);
+    p.view.snapshot();
+    const newText={
+      id:crypto.randomUUID(),
+      x:pos.x,y:pos.y,text:'',
+      font:textFont.value,
+      size:Number(textSize.value||12),
+      bold:textBoldOn,
+      color:penColor.value
+    };
+    p.view.data.texts.push(newText);
+    p.view.renderTexts(false);
+    p.view.save();
+
+    const node=p.view.textLayer.querySelector(`[data-id="${CSS.escape(newText.id)}"]`);
+    if(node){
+      setSelection(p.view,[],[newText.id]);
+      syncTextControlsFromSelection();
+      node.focus({preventScroll:true});
+      try{node.setSelectionRange(0,0);}catch{}
+    }
+    return;
+  }
+
+  if(document.activeElement?.matches?.('textarea.text-note'))return;
+  e.preventDefault();
   if(e.touches.length===0)activeView?.endFinger();
 },{capture:true,passive:false});
 
 viewport.addEventListener('touchcancel',e=>{
-  if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
   e.preventDefault();
-  fingerGesture=null;viewport.classList.remove('two-finger-panning');
+  pendingTextTap=null;
+  fingerGesture=null;
+  viewport.classList.remove('two-finger-panning');
   activeView?.endFinger();
 },{capture:true,passive:false});
 
