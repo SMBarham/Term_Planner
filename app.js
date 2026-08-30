@@ -17,6 +17,52 @@ const textBold=document.getElementById('textBold');
 let textBoldOn=false;
 const FONT_MAP={centaur:'Centaur, \"Times New Roman\", Georgia, serif',caveat:'\"Caveat\", cursive',darker:'\"Darker Grotesque\", sans-serif'};
 
+const textEditDialog=document.getElementById('textEditDialog');
+const textEditArea=document.getElementById('textEditArea');
+const textEditForm=document.getElementById('textEditForm');
+let textEditState=null; // {view,textId,x,y,newText}
+
+
+function openTextEditor(view,{textId=null,x=null,y=null}={}){
+  activeView=view;
+  const existing=textId ? view.data.texts.find(t=>t.id===textId) : null;
+  textEditState={view,textId,x,y,newText:!existing};
+  textEditArea.value=existing?.text && existing.text!=='Type here' ? existing.text : '';
+  textEditDialog.showModal();
+  // Do not force Android's keyboard. The user taps the real textarea in the dialog,
+  // which is reliable and does not fight planner touch handlers.
+}
+async function commitTextEditor(){
+  const s=textEditState;if(!s)return;
+  const value=textEditArea.value.trimEnd();
+  const view=s.view;
+  if(s.textId){
+    const t=view.data.texts.find(x=>x.id===s.textId);
+    if(t){
+      view.snapshot();
+      if(value.trim()===''){
+        view.data.texts=view.data.texts.filter(x=>x.id!==s.textId);
+        clearSelection();
+      }else{
+        t.text=value;
+      }
+    }
+  }else if(value.trim()!==''){
+    view.snapshot();
+    const t={
+      id:crypto.randomUUID(),
+      x:s.x,y:s.y,text:value,
+      font:textFont.value,size:Number(textSize.value||12),
+      bold:textBoldOn,color:penColor.value
+    };
+    view.data.texts.push(t);
+    setSelection(view,[],[t.id]);
+  }
+  view.renderTexts();
+  await view.save();
+  textEditState=null;
+}
+
 // IndexedDB
 const dbPromise=new Promise((resolve,reject)=>{
   const req=indexedDB.open('term-planner-db',1);
@@ -51,11 +97,17 @@ class PageView{
       if(e.pointerType==='touch')return;
       activeView=this;
       if(currentTool==='text'){
-        if(e.target.closest('.text-note'))return;
+        const note=e.target.closest('.text-note');
+        if(note){
+          const id=note.dataset.id;
+          setSelection(this,[],[id]);syncTextControlsFromSelection();
+          openTextEditor(this,{textId:id});
+          return;
+        }
         clearSelection();
-        const p=this.coords(e);this.snapshot();
-        this.data.texts.push({id:crypto.randomUUID(),x:p.x,y:p.y,text:'Type here',font:textFont.value,size:Number(textSize.value||12),bold:textBoldOn,color:penColor.value});
-        this.renderTexts(true);this.save();return;
+        const p=this.coords(e);
+        openTextEditor(this,{x:p.x,y:p.y});
+        return;
       }
       if(!this.isInkPointer(e))return;
       if(currentTool==='select'){
@@ -203,78 +255,39 @@ class PageView{
   renderTexts(focusNewest=false){
     this.textLayer.innerHTML='';
     for(const t of this.data.texts){
-      const editing=currentTool==='text';
-      const d=document.createElement(editing?'textarea':'div');
+      const d=document.createElement('div');
       d.className='text-note';
+      d.tabIndex=0;
       d.dataset.id=t.id;
       d.style.left=(t.x*100)+'%';
       d.style.top=(t.y*100)+'%';
-      if(editing){
-        d.value=t.text==='Type here'?'':t.text;
-        d.placeholder='Type here';
-        d.rows=1;
-        d.spellcheck=true;
-      }else{
-        d.tabIndex=0;
-        d.textContent=t.text;
-      }
+      d.textContent=t.text;
       applyTextStyle(d,t);
 
-      if(editing){
-        // Native textarea is intentional: Android Chrome reliably summons
-        // its keyboard for a real form control, unlike contenteditable divs.
-        d.addEventListener('pointerdown',e=>{
-          if(e.pointerType==='touch')return; // native touch path owns it
-          activeView=this;e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();
-        });
-        d.addEventListener('touchstart',e=>{
-          activeView=this;
-          setSelection(this,[],[t.id]);
-          syncTextControlsFromSelection();
-        },{passive:true});
-        d.addEventListener('input',()=>{
-          t.text=d.value;
-          d.style.height='auto';
-          d.style.height=Math.max(28,d.scrollHeight)+'px';
-          this.updateSelectionVisual();
-          this.save();
-        });
-        d.addEventListener('focus',()=>{
+      d.addEventListener('pointerdown',e=>{
+        if(e.pointerType==='touch')return;
+        activeView=this;e.stopPropagation();
+        if(e.pointerType==='mouse'&&e.button!==0)return;
+        if(currentTool==='select'){
+          if(!selectionHasText(this,t.id))setSelection(this,[],[t.id]);
+          const p=this.coords(e);this.beginGroupDrag(e,p);d.setPointerCapture?.(e.pointerId);return;
+        }
+        if(currentTool==='text'){
           setSelection(this,[],[t.id]);syncTextControlsFromSelection();
-          d.style.height='auto';d.style.height=Math.max(28,d.scrollHeight)+'px';
-        });
-        d.addEventListener('blur',()=>{t.text=d.value;this.save();});
-      }else{
-        d.addEventListener('pointerdown',e=>{
-          if(e.pointerType==='touch')return;
-          activeView=this;e.stopPropagation();
-          if(e.pointerType==='mouse'&&e.button!==0)return;
-          if(currentTool==='select'){
-            if(!selectionHasText(this,t.id))setSelection(this,[],[t.id]);
-            const p=this.coords(e);this.beginGroupDrag(e,p);d.setPointerCapture?.(e.pointerId);
-          }
-        });
-        d.addEventListener('click',e=>{e.stopPropagation();if(currentTool==='select'){setSelection(this,[],[t.id]);syncTextControlsFromSelection();}});
-      }
+          openTextEditor(this,{textId:t.id});
+        }
+      });
+
+      d.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(currentTool==='select'){
+          setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+        }
+      });
 
       this.textLayer.appendChild(d);
-      if(editing){
-        requestAnimationFrame(()=>{
-          d.style.height='auto';d.style.height=Math.max(28,d.scrollHeight)+'px';
-        });
-      }
     }
     this.updateSelectionVisual();
-    if(focusNewest){
-      const last=this.textLayer.lastElementChild;
-      const t=this.data.texts.at(-1);
-      if(last&&t){
-        setSelection(this,[],[t.id]);syncTextControlsFromSelection();
-        if(last.tagName==='TEXTAREA'){
-          requestAnimationFrame(()=>last.focus({preventScroll:true}));
-        }
-      }
-    }
   }
   updateSelectionVisual(){
     this.textLayer.querySelectorAll('.text-note').forEach(n=>n.classList.toggle('selected',selection.view===this&&selection.textIds.has(n.dataset.id)));
@@ -446,7 +459,6 @@ viewport.addEventListener('touchmove',e=>{
   }
 
   if(e.touches.length===1){
-    if(document.activeElement?.matches?.('textarea.text-note'))return;
     e.preventDefault();
     activeView?.moveFinger(e.touches[0]);
   }
@@ -468,50 +480,23 @@ viewport.addEventListener('touchend',e=>{
     const p=pendingTextTap;
     pendingTextTap=null;
     if(p.moved)return;
-
     activeView=p.view;
 
     if(p.target){
       const id=p.target.dataset.id;
-      const t=p.view.data.texts.find(x=>x.id===id);
-      if(t){
-        setSelection(p.view,[],[id]);
-        syncTextControlsFromSelection();
-        // Real textarea + focus during the touchend user gesture.
-        p.target.focus({preventScroll:true});
-        try{
-          const end=p.target.value.length;
-          p.target.setSelectionRange(end,end);
-        }catch{}
-      }
+      setSelection(p.view,[],[id]);
+      syncTextControlsFromSelection();
+      openTextEditor(p.view,{textId:id});
       return;
     }
 
     const pos=p.view.coordsXY(p.x,p.y);
-    p.view.snapshot();
-    const newText={
-      id:crypto.randomUUID(),
-      x:pos.x,y:pos.y,text:'',
-      font:textFont.value,
-      size:Number(textSize.value||12),
-      bold:textBoldOn,
-      color:penColor.value
-    };
-    p.view.data.texts.push(newText);
-    p.view.renderTexts(false);
-    p.view.save();
-
-    const node=p.view.textLayer.querySelector(`[data-id="${CSS.escape(newText.id)}"]`);
-    if(node){
-      setSelection(p.view,[],[newText.id]);
-      syncTextControlsFromSelection();
-      node.focus({preventScroll:true});
-      try{node.setSelectionRange(0,0);}catch{}
-    }
+    clearSelection();
+    openTextEditor(p.view,{x:pos.x,y:pos.y});
     return;
   }
 
-  if(document.activeElement?.matches?.('textarea.text-note'))return;
+  if(textEditDialog.open)return;
   e.preventDefault();
   if(e.touches.length===0)activeView?.endFinger();
 },{capture:true,passive:false});
@@ -523,6 +508,17 @@ viewport.addEventListener('touchcancel',e=>{
   viewport.classList.remove('two-finger-panning');
   activeView?.endFinger();
 },{capture:true,passive:false});
+
+
+document.getElementById('textEditSave').addEventListener('click',async e=>{
+  e.preventDefault();
+  await commitTextEditor();
+  textEditDialog.close();
+});
+document.getElementById('textEditCancel').addEventListener('click',e=>{
+  textEditState=null;
+});
+textEditDialog.addEventListener('close',()=>{textEditState=null;});
 
 textBold.onclick=()=>{textBoldOn=!textBoldOn;textBold.classList.toggle('active',textBoldOn);applyControlsToSelected();};
 [textFont,textSize,penColor].forEach(el=>el.addEventListener('change',applyControlsToSelected));textSize.addEventListener('input',applyControlsToSelected);

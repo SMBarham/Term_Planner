@@ -14,11 +14,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Darker+Grotesque:wght@300..900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link rel="stylesheet" href="style.css?v=21" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">Term Planner <span>MT 2026</span><span class="build-badge">v20 TEXT FOCUS</span></div>
+    <div class="brand">Term Planner <span>MT 2026</span><span class="build-badge">v21 TEXT EDITOR</span></div>
     <div class="top-actions">
       <button id="sectionBtn" class="ghost">Jump</button>
       <button id="spreadBtn" class="ghost" title="Toggle single page / facing spread">Spread</button>
@@ -92,6 +92,17 @@
     </form>
   </dialog>
 
+  <dialog id="textEditDialog">
+    <form method="dialog" class="dialog-card text-editor-card" id="textEditForm">
+      <h2>Edit text</h2>
+      <textarea id="textEditArea" rows="4" placeholder="Type here"></textarea>
+      <div class="text-editor-actions">
+        <button value="cancel" class="close-btn" id="textEditCancel">Cancel</button>
+        <button value="default" id="textEditSave">Done</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="moreDialog">
     <div class="dialog-card">
       <h2>Planner data</h2>
@@ -108,6 +119,6 @@
   </dialog>
 
   <script src="pages-data.js"></script>
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

@@ -125,3 +125,25 @@ textarea.text-note{
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
 }
+
+
+/* v21: robust tablet text editor. Planner text remains an annotation;
+   editing happens in a real dialog textarea so Android owns keyboard focus. */
+.text-editor-card{min-width:min(92vw,560px)}
+#textEditArea{
+  width:100%;
+  min-height:120px;
+  resize:vertical;
+  border:1px solid #c9bfd5;
+  border-radius:12px;
+  background:#fff;
+  color:var(--ink);
+  padding:12px;
+  font:20px/1.35 "Caveat",cursive;
+  outline:none;
+  user-select:text;
+  -webkit-user-select:text;
+  touch-action:manipulation;
+}
+#textEditArea:focus{border-color:var(--purple)}
+.text-editor-actions{display:flex;justify-content:flex-end;gap:8px}
