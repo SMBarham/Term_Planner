@@ -16,6 +16,7 @@ const textSize=document.getElementById('textSize');
 const textBold=document.getElementById('textBold');
 let textBoldOn=false;
 const FONT_MAP={centaur:'Centaur, \"Times New Roman\", Georgia, serif',caveat:'\"Caveat\", cursive',darker:'\"Darker Grotesque\", sans-serif'};
+const zoomBadge=document.getElementById('zoomBadge');
 
 const textEditBar=document.getElementById('textEditBar');
 const textEditArea=document.getElementById('textEditArea');
@@ -152,6 +153,7 @@ class PageView{
   bind(){
     this.el.addEventListener('pointerdown',e=>{
       if(e.pointerType==='touch')return;
+      if(e.pointerType==='pen')stylusSeen=true;
       activeView=this;
       if(currentTool==='text'){
         const note=e.target.closest('.text-note');
@@ -384,10 +386,10 @@ function go(page){currentPage=Math.max(1,Math.min(TOTAL_PAGES,Number(page)||1));
 document.getElementById('prevBtn').onclick=()=>go(currentPage-(spreadMode&&currentPage>1?2:1));
 document.getElementById('nextBtn').onclick=()=>go(currentPage+(spreadMode&&currentPage>1?2:1));
 pageInput.onchange=()=>go(pageInput.value);
-spreadBtn.onclick=()=>{spreadMode=!spreadMode;localStorage.setItem('planner-spread',spreadMode);render();};
+spreadBtn.onclick=()=>{spreadMode=!spreadMode;pageZoom=1;localStorage.setItem('planner-zoom','1');localStorage.setItem('planner-spread',spreadMode);render();};
 window.addEventListener('resize',()=>applyZoom(true));
 
-function applyTextStyle(note,t){note.style.fontFamily=FONT_MAP[t.font||'caveat'];note.style.fontSize=(t.size||12)+'px';note.style.fontWeight=t.bold?'700':'400';note.style.color=t.color||'#34223f';}
+function applyTextStyle(note,t){note.style.fontFamily=FONT_MAP[t.font||'caveat'];note.style.fontSize=((t.size||12)*pageZoom)+'px';note.style.fontWeight=t.bold?'700':'400';note.style.color=t.color||'#34223f';}
 function beginTextEdit(note,t,view,selectAll=false){note.contentEditable='true';note.focus();if(selectAll){const r=document.createRange();r.selectNodeContents(note);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);}}
 function applyControlsToSelected(){const ts=selectedTexts();if(!ts.length)return;const view=selection.view;for(const t of ts){t.font=textFont.value;t.size=Math.max(6,Math.min(72,Number(textSize.value)||12));t.bold=textBoldOn;t.color=penColor.value;const n=view.textLayer.querySelector(`[data-id="${CSS.escape(t.id)}"]`);if(n)applyTextStyle(n,t);}textSize.value=ts[0].size;view.save();}
 async function deleteSelected(){if(!selection.view||selectionCount()===0)return;const view=selection.view;view.snapshot();const ids=new Set(selection.textIds);view.data.texts=view.data.texts.filter(t=>!ids.has(t.id));const idxs=[...selection.strokeIndexes].sort((a,b)=>b-a);for(const i of idxs)view.data.strokes.splice(i,1);clearSelection();view.redraw();view.renderTexts();await view.save();}
@@ -407,6 +409,7 @@ document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
 // Two fingers always pan/pinch; one finger belongs to the active tool.
 let fingerGesture=null;
 let pendingTextTap=null;
+let stylusSeen=false;
 let pageZoom=Number(localStorage.getItem('planner-zoom')||1);
 const MIN_ZOOM=.75, MAX_ZOOM=3;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
@@ -417,12 +420,15 @@ function touchMetrics(list){
 }
 function basePageWidth(){
   const vw=Math.max(1,viewport.clientWidth);
-  const portrait=matchMedia('(orientation: portrait) and (max-width: 900px)').matches;
-  if(spreadMode&&currentPage!==1&&!portrait)return Math.min((vw-42)/2,850);
+  if(spreadMode&&currentPage!==1)return Math.min((vw-42)/2,850);
   return Math.min(vw*.94,850);
+}
+function updateZoomBadge(){
+  if(zoomBadge)zoomBadge.textContent=Math.round(pageZoom*100)+'%';
 }
 function applyZoom(preserveCentre=false){
   pageZoom=clamp(pageZoom,MIN_ZOOM,MAX_ZOOM);
+  updateZoomBadge();
   const centreX=viewport.scrollLeft+viewport.clientWidth/2,centreY=viewport.scrollTop+viewport.clientHeight/2;
   const oldW=views[0]?.el.getBoundingClientRect().width||basePageWidth();
   const w=basePageWidth()*pageZoom;
@@ -470,6 +476,16 @@ viewport.addEventListener('touchstart',e=>{
     const v=pageViewFromTarget(e.target);
     if(!v)return;
 
+    if(stylusSeen){
+      e.preventDefault();
+      fingerGesture={
+        oneFinger:true,
+        startX:touch.clientX,startY:touch.clientY,
+        startLeft:viewport.scrollLeft,startTop:viewport.scrollTop
+      };
+      return;
+    }
+
     if(currentTool==='text'){
       // Do NOT create/focus on touchstart. Also do NOT prevent the native
       // touch sequence: Android only treats the eventual focus as keyboard-
@@ -490,12 +506,20 @@ viewport.addEventListener('touchstart',e=>{
 },{capture:true,passive:false});
 
 viewport.addEventListener('touchmove',e=>{
+  if(fingerGesture?.oneFinger&&e.touches.length===1){
+    e.preventDefault();
+    const t=e.touches[0];
+    viewport.scrollLeft=fingerGesture.startLeft-(t.clientX-fingerGesture.startX);
+    viewport.scrollTop=fingerGesture.startTop-(t.clientY-fingerGesture.startY);
+    return;
+  }
   if(fingerGesture&&e.touches.length>=2){
     e.preventDefault();e.stopPropagation();
     const m=touchMetrics(e.touches),vr=viewport.getBoundingClientRect();
     const newZoom=clamp(fingerGesture.startZoom*(m.distance/fingerGesture.startDistance),MIN_ZOOM,MAX_ZOOM);
     if(Math.abs(newZoom-pageZoom)>.003){
       pageZoom=newZoom;
+      updateZoomBadge();
       const w=basePageWidth()*pageZoom;
       for(const v of views){v.el.style.width=w+'px';v.el.style.maxWidth='none';}
       views.forEach(v=>v.resize());
@@ -522,6 +546,11 @@ viewport.addEventListener('touchmove',e=>{
 },{capture:true,passive:false});
 
 viewport.addEventListener('touchend',e=>{
+  if(fingerGesture?.oneFinger){
+    e.preventDefault();
+    if(e.touches.length===0)fingerGesture=null;
+    return;
+  }
   if(fingerGesture){
     e.preventDefault();
     if(e.touches.length<2){

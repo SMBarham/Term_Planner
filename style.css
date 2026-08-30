@@ -177,3 +177,15 @@ textarea.text-note{
     border-radius:12px;
   }
 }
+
+
+/* v24: tablet refinements */
+.zoom-badge{font-size:.7rem;opacity:.65;margin-left:.4rem;font-weight:600}
+@media (orientation:portrait) and (max-width:900px){
+  .pages-host.spread{flex-direction:row;align-items:flex-start}
+  .pages-host.spread .page-view{max-width:calc((100vw - 42px)/2)}
+}
+@media (max-width:760px){
+  .brand .zoom-badge{display:inline!important}
+  .pages-host.spread .page-view{max-width:calc((100vw - 17px)/2)}
+}
