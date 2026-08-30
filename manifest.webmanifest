@@ -1,0 +1,15 @@
+{
+  "name": "Term Planner MT 2026",
+  "short_name": "Term Planner",
+  "description": "Editable standalone teacher term planner",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ddd7e4",
+  "theme_color": "#6d3aa8",
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"}
+  ]
+}

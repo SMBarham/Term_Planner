@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+  <meta name="theme-color" content="#6d3aa8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Term Planner" />
+  <title>Term Planner MT 2026</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Term Planner <span>MT 2026</span></div>
+    <div class="top-actions">
+      <button id="sectionBtn" class="ghost">Jump</button>
+      <button id="spreadBtn" class="ghost" title="Toggle single page / facing spread">Spread</button>
+      <button id="moreBtn" class="ghost">•••</button>
+    </div>
+  </header>
+
+  <main id="viewport" class="viewport">
+    <div id="pagesHost" class="pages-host"></div>
+  </main>
+
+  <nav class="pager" aria-label="Page navigation">
+    <button id="prevBtn" aria-label="Previous page">‹</button>
+    <label class="page-jump">Page <input id="pageInput" type="number" min="1" max="145" inputmode="numeric" /> / 145</label>
+    <button id="nextBtn" aria-label="Next page">›</button>
+  </nav>
+
+  <div class="tool-dock" id="toolDock">
+    <button data-tool="pen" class="tool active" title="Pen">✎</button>
+    <button data-tool="eraser" class="tool" title="Eraser">⌫</button>
+    <button data-tool="text" class="tool" title="Add typed note">T</button>
+    <button id="undoBtn" class="tool" title="Undo">↶</button>
+    <label class="size-control" title="Pen size"><input id="penSize" type="range" min="1" max="12" value="3" /></label>
+    <input id="penColor" type="color" value="#34223f" title="Pen colour" />
+  </div>
+
+  <dialog id="sectionDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Jump to</h2>
+      <div class="jump-grid">
+        <button value="1" data-page="1">Cover</button>
+        <button value="3" data-page="3">Important info</button>
+        <button value="4" data-page="4">Calendar</button>
+        <button value="5" data-page="5">Timetable</button>
+        <button value="6" data-page="6">August</button>
+        <button value="7" data-page="7">September</button>
+        <button value="8" data-page="8">October</button>
+        <button value="9" data-page="9">November</button>
+        <button value="10" data-page="10">December</button>
+        <button value="11" data-page="11">To Do</button>
+        <button value="15" data-page="15">Weekly planner</button>
+      </div>
+      <button class="close-btn" value="cancel">Close</button>
+    </form>
+  </dialog>
+
+  <dialog id="moreDialog">
+    <div class="dialog-card">
+      <h2>Planner data</h2>
+      <p class="small">Your handwriting and typed notes are stored on this device.</p>
+      <button id="offlineBtn">Make all 145 pages available offline</button>
+      <div id="offlineStatus" class="small status"></div>
+      <hr />
+      <button id="exportBtn">Export annotation backup</button>
+      <label class="file-btn">Import annotation backup<input id="importInput" type="file" accept="application/json" /></label>
+      <hr />
+      <button id="clearPageBtn" class="danger">Clear annotations on current page</button>
+      <button id="closeMoreBtn" class="close-btn">Close</button>
+    </div>
+  </dialog>
+
+  <script src="pages-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
