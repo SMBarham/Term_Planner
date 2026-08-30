@@ -200,26 +200,55 @@ function beginTextEdit(note,t,view,selectAll=false){note.contentEditable='true';
 function applyControlsToSelected(){const ts=selectedTexts();if(!ts.length)return;const view=selection.view;for(const t of ts){t.font=textFont.value;t.size=Math.max(6,Math.min(72,Number(textSize.value)||12));t.bold=textBoldOn;t.color=penColor.value;const n=view.textLayer.querySelector(`[data-id="${CSS.escape(t.id)}"]`);if(n)applyTextStyle(n,t);}textSize.value=ts[0].size;view.save();}
 async function deleteSelected(){if(!selection.view||selectionCount()===0)return;const view=selection.view;view.snapshot();const ids=new Set(selection.textIds);view.data.texts=view.data.texts.filter(t=>!ids.has(t.id));const idxs=[...selection.strokeIndexes].sort((a,b)=>b-a);for(const i of idxs)view.data.strokes.splice(i,1);clearSelection();view.redraw();view.renderTexts();await view.save();}
 function refreshToolOptions(){textOptions.hidden=!(currentTool==='text'||selection.textIds.size>0);document.getElementById('deleteSelectionBtn').hidden=selectionCount()===0;document.querySelectorAll('.pen-only').forEach(x=>x.style.display=currentTool==='pen'?'':'none');}
-document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{currentTool=b.dataset.tool;if(currentTool!=='select'&&currentTool!=='text')clearSelection();document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));viewport.classList.toggle('hand-mode',currentTool==='hand');refreshToolOptions();});
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{currentTool=b.dataset.tool;if(currentTool!=='select'&&currentTool!=='text')clearSelection();document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));refreshToolOptions();});
 
-// Hand tool: drag anywhere in the planner viewport to pan without creating annotations.
-let panState=null;
+// Two-finger touch gesture: pan the planner regardless of the active annotation tool.
+// A single touch/stylus pointer is left to the current tool.
+const touchPointers=new Map();
+let twoFingerPan=null;
+
+function touchCentre(){
+  const pts=[...touchPointers.values()];
+  if(pts.length<2)return null;
+  return {x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+}
+function beginTwoFingerPan(){
+  const c=touchCentre();if(!c)return;
+  // Cancel any one-finger annotation that began before the second finger landed.
+  for(const v of views){
+    if(v.drawing){
+      if(v.stroke && v.data.strokes.at(-1)===v.stroke)v.data.strokes.pop();
+      if(v.history.length)v.history.pop();
+      v.drawing=false;v.stroke=null;v.redraw();
+    }
+    if(v.lasso){v.lasso=null;v.redraw();}
+    if(v.groupDrag){v.groupDrag=null;v.renderTexts();v.redraw();v.updateSelectionVisual();}
+  }
+  twoFingerPan={x:c.x,y:c.y,left:viewport.scrollLeft,top:viewport.scrollTop};
+  viewport.classList.add('two-finger-panning');
+}
 viewport.addEventListener('pointerdown',e=>{
-  if(currentTool!=='hand'||e.button>0)return;
-  e.preventDefault();
-  panState={id:e.pointerId,x:e.clientX,y:e.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};
-  viewport.classList.add('panning');
-  viewport.setPointerCapture?.(e.pointerId);
-});
+  if(e.pointerType!=='touch')return;
+  touchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(touchPointers.size===2)beginTwoFingerPan();
+},{capture:true});
 viewport.addEventListener('pointermove',e=>{
-  if(!panState||e.pointerId!==panState.id)return;
-  e.preventDefault();
-  viewport.scrollLeft=panState.left-(e.clientX-panState.x);
-  viewport.scrollTop=panState.top-(e.clientY-panState.y);
-});
-const endPan=e=>{if(!panState||e.pointerId!==panState.id)return;panState=null;viewport.classList.remove('panning');};
-viewport.addEventListener('pointerup',endPan);
-viewport.addEventListener('pointercancel',endPan);
+  if(e.pointerType!=='touch'||!touchPointers.has(e.pointerId))return;
+  touchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(!twoFingerPan||touchPointers.size<2)return;
+  const c=touchCentre();if(!c)return;
+  e.preventDefault();e.stopPropagation();
+  viewport.scrollLeft=twoFingerPan.left-(c.x-twoFingerPan.x);
+  viewport.scrollTop=twoFingerPan.top-(c.y-twoFingerPan.y);
+},{capture:true,passive:false});
+function endTouchPointer(e){
+  if(e.pointerType!=='touch')return;
+  touchPointers.delete(e.pointerId);
+  if(touchPointers.size<2){twoFingerPan=null;viewport.classList.remove('two-finger-panning');}
+}
+viewport.addEventListener('pointerup',endTouchPointer,{capture:true});
+viewport.addEventListener('pointercancel',endTouchPointer,{capture:true});
+
 textBold.onclick=()=>{textBoldOn=!textBoldOn;textBold.classList.toggle('active',textBoldOn);applyControlsToSelected();};
 [textFont,textSize,penColor].forEach(el=>el.addEventListener('change',applyControlsToSelected));textSize.addEventListener('input',applyControlsToSelected);
 document.getElementById('textSizeDown').onclick=()=>{textSize.value=Math.max(6,(Number(textSize.value)||12)-1);applyControlsToSelected();};

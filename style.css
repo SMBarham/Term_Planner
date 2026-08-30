@@ -89,8 +89,3 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
   box-shadow: none !important;
 }
 
-
-/* v11: hand / pan tool */
-.viewport.hand-mode{cursor:grab;touch-action:none}
-.viewport.hand-mode.panning{cursor:grabbing}
-.viewport.hand-mode .page-view,.viewport.hand-mode .ink-layer,.viewport.hand-mode .text-note{cursor:inherit!important}
