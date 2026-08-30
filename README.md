@@ -40,3 +40,11 @@ The Select tool now works for both typed text and handwriting. Draw a freehand l
 
 ## v11
 Adds a Hand/Pan tool. Select the hand icon, then drag the planner to pan without drawing, selecting, or moving annotations.
+
+
+## v13 tablet interaction fixes
+- One finger/stylus is reserved for the active annotation tool.
+- Two-finger pan is custom-handled instead of browser scrolling.
+- Two-finger pinch zoom added (65%–250%).
+- Tapping an existing text box with the Text tool enters edit mode directly on touch devices.
+- Annotation coordinates remain proportional while zooming.
