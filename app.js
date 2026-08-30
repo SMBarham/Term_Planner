@@ -420,7 +420,24 @@ function touchMetrics(list){
 }
 function basePageWidth(){
   const vw=Math.max(1,viewport.clientWidth);
-  if(spreadMode&&currentPage!==1)return Math.min((vw-42)/2,850);
+
+  if(spreadMode&&currentPage!==1){
+    // Fit two complete portrait pages into the visible planner area at 100%.
+    // Width fit: two pages + gap.
+    const widthFit=Math.max(120,(vw-42)/2);
+
+    // Height fit: viewport padding is 12px top + 88px bottom in the existing CSS.
+    // Use the actual rendered page aspect ratio when available.
+    const img=views[0]?.img;
+    const aspect=(img?.naturalWidth&&img?.naturalHeight)
+      ? img.naturalWidth/img.naturalHeight
+      : 0.707; // safe A-series-ish fallback
+    const availableH=Math.max(160,viewport.clientHeight-100);
+    const heightFit=availableH*aspect;
+
+    return Math.min(widthFit,heightFit,850);
+  }
+
   return Math.min(vw*.94,850);
 }
 function updateZoomBadge(){
@@ -463,7 +480,13 @@ viewport.addEventListener('touchstart',e=>{
     cancelFingerAnnotation();
     const m=touchMetrics(e.touches),vr=viewport.getBoundingClientRect();
     fingerGesture={
-      startZoom:pageZoom,startDistance:m.distance,
+      mode:null,
+      startZoom:pageZoom,
+      startDistance:m.distance,
+      startCentreX:m.x,
+      startCentreY:m.y,
+      startLeft:viewport.scrollLeft,
+      startTop:viewport.scrollTop,
       contentX:viewport.scrollLeft+(m.x-vr.left),
       contentY:viewport.scrollTop+(m.y-vr.top)
     };
@@ -516,17 +539,49 @@ viewport.addEventListener('touchmove',e=>{
   if(fingerGesture&&e.touches.length>=2){
     e.preventDefault();e.stopPropagation();
     const m=touchMetrics(e.touches),vr=viewport.getBoundingClientRect();
-    const newZoom=clamp(fingerGesture.startZoom*(m.distance/fingerGesture.startDistance),MIN_ZOOM,MAX_ZOOM);
-    if(Math.abs(newZoom-pageZoom)>.003){
-      pageZoom=newZoom;
-      updateZoomBadge();
-      const w=basePageWidth()*pageZoom;
-      for(const v of views){v.el.style.width=w+'px';v.el.style.maxWidth='none';}
-      views.forEach(v=>v.resize());
+
+    const distanceRatio=m.distance/fingerGesture.startDistance;
+    const scaleDelta=Math.abs(distanceRatio-1);
+    const centreMove=Math.hypot(
+      m.x-fingerGesture.startCentreX,
+      m.y-fingerGesture.startCentreY
+    );
+
+    // Decide once, then lock the gesture:
+    // noticeable finger separation = pinch; otherwise noticeable centre movement = pan.
+    if(!fingerGesture.mode){
+      if(scaleDelta>.035)fingerGesture.mode='pinch';
+      else if(centreMove>10)fingerGesture.mode='pan';
+      else return;
     }
-    const ratio=pageZoom/fingerGesture.startZoom;
-    viewport.scrollLeft=fingerGesture.contentX*ratio-(m.x-vr.left);
-    viewport.scrollTop=fingerGesture.contentY*ratio-(m.y-vr.top);
+
+    if(fingerGesture.mode==='pinch'){
+      const newZoom=clamp(
+        fingerGesture.startZoom*distanceRatio,
+        MIN_ZOOM,MAX_ZOOM
+      );
+      if(Math.abs(newZoom-pageZoom)>.003){
+        pageZoom=newZoom;
+        updateZoomBadge();
+        const w=basePageWidth()*pageZoom;
+        for(const v of views){v.el.style.width=w+'px';v.el.style.maxWidth='none';}
+        views.forEach(v=>v.resize());
+      }
+
+      // Keep the ORIGINAL pinch centre fixed on screen.
+      // Moving the midpoint while pinching therefore does not pan the page.
+      const ratio=pageZoom/fingerGesture.startZoom;
+      viewport.scrollLeft=
+        fingerGesture.contentX*ratio-(fingerGesture.startCentreX-vr.left);
+      viewport.scrollTop=
+        fingerGesture.contentY*ratio-(fingerGesture.startCentreY-vr.top);
+    }else{
+      // Pure two-finger pan: keep zoom unchanged.
+      viewport.scrollLeft=
+        fingerGesture.startLeft-(m.x-fingerGesture.startCentreX);
+      viewport.scrollTop=
+        fingerGesture.startTop-(m.y-fingerGesture.startCentreY);
+    }
     return;
   }
 
