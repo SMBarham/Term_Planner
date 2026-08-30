@@ -401,10 +401,9 @@ viewport.addEventListener('touchstart',e=>{
     if(!v)return;
 
     if(currentTool==='text'){
-      // Do NOT create/focus on touchstart. Android may cancel focus when the
-      // gesture resolves, and this also used to create a box before finger 2
-      // arrived for pinch/pan. Treat it as a pending tap until touchend.
-      e.preventDefault();
+      // Do NOT create/focus on touchstart. Also do NOT prevent the native
+      // touch sequence: Android only treats the eventual focus as keyboard-
+      // eligible when the user gesture has not already been cancelled.
       pendingTextTap={
         view:v,
         target:e.target?.closest?.('.text-note')||null,
@@ -438,10 +437,10 @@ viewport.addEventListener('touchmove',e=>{
   }
 
   if(currentTool==='text'&&pendingTextTap&&e.touches.length===1){
-    e.preventDefault();
     const t=e.touches[0];
     if(Math.hypot(t.clientX-pendingTextTap.x,t.clientY-pendingTextTap.y)>10){
       pendingTextTap.moved=true;
+      e.preventDefault();
     }
     return;
   }
@@ -466,7 +465,6 @@ viewport.addEventListener('touchend',e=>{
   }
 
   if(currentTool==='text'&&pendingTextTap&&e.touches.length===0){
-    e.preventDefault();
     const p=pendingTextTap;
     pendingTextTap=null;
     if(p.moved)return;

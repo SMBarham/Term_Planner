@@ -117,3 +117,11 @@ textarea.text-note{
 textarea.text-note:focus{
   background:rgba(255,255,255,.42);
 }
+
+
+/* v20: let Android own the final tap-to-focus sequence. */
+textarea.text-note{
+  pointer-events:auto;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
