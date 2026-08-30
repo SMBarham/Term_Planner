@@ -95,9 +95,25 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
 .viewport.two-finger-panning{cursor:grabbing}
 .build-badge{font-size:.7rem;opacity:.55;margin-left:.4rem;font-weight:600}
 
-/* v16: Android text editing */
-.text-note[contenteditable="true"]{
-  caret-color:var(--ink);
-  -webkit-user-select:text;
+
+/* v17: Android-native text editing uses a real textarea. */
+textarea.text-note{
+  resize:none;
+  overflow:hidden;
+  appearance:none;
+  -webkit-appearance:none;
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  background:rgba(255,255,255,.16);
+  font:inherit;
+  line-height:1.25;
+  padding:3px 5px;
+  touch-action:manipulation;
   user-select:text;
+  -webkit-user-select:text;
+  caret-color:var(--ink);
+}
+textarea.text-note:focus{
+  background:rgba(255,255,255,.42);
 }

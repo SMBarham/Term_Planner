@@ -203,38 +203,74 @@ class PageView{
   renderTexts(focusNewest=false){
     this.textLayer.innerHTML='';
     for(const t of this.data.texts){
-      const d=document.createElement('div');d.className='text-note';d.tabIndex=0;d.dataset.id=t.id;d.style.left=(t.x*100)+'%';d.style.top=(t.y*100)+'%';d.textContent=t.text;applyTextStyle(d,t);
-      d.addEventListener('pointerdown',e=>{
-        activeView=this;e.stopPropagation();
-        if(d.contentEditable==='true')return;
-        if(e.pointerType==='mouse'&&e.button!==0)return;
-        if(currentTool==='select'){
-          if(!selectionHasText(this,t.id))setSelection(this,[],[t.id]);
-          const p=this.coords(e);this.beginGroupDrag(e,p);d.setPointerCapture?.(e.pointerId);return;
-        }
-        if(currentTool==='text'){setSelection(this,[],[t.id]);syncTextControlsFromSelection();}
-      });
-      d.addEventListener('click',e=>{
-        e.stopPropagation();
-        if(currentTool==='select'){
+      const editing=currentTool==='text';
+      const d=document.createElement(editing?'textarea':'div');
+      d.className='text-note';
+      d.dataset.id=t.id;
+      d.style.left=(t.x*100)+'%';
+      d.style.top=(t.y*100)+'%';
+      if(editing){
+        d.value=t.text==='Type here'?'':t.text;
+        d.placeholder='Type here';
+        d.rows=1;
+        d.spellcheck=true;
+      }else{
+        d.tabIndex=0;
+        d.textContent=t.text;
+      }
+      applyTextStyle(d,t);
+
+      if(editing){
+        // Native textarea is intentional: Android Chrome reliably summons
+        // its keyboard for a real form control, unlike contenteditable divs.
+        d.addEventListener('pointerdown',e=>{
+          if(e.pointerType==='touch')return; // native touch path owns it
+          activeView=this;e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+        });
+        d.addEventListener('touchstart',e=>{
+          activeView=this;e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();
+        },{passive:true});
+        d.addEventListener('input',()=>{
+          t.text=d.value;
+          d.style.height='auto';
+          d.style.height=Math.max(28,d.scrollHeight)+'px';
+          this.updateSelectionVisual();
+          this.save();
+        });
+        d.addEventListener('focus',()=>{
           setSelection(this,[],[t.id]);syncTextControlsFromSelection();
-        }else if(currentTool==='text'){
-          setSelection(this,[],[t.id]);syncTextControlsFromSelection();
-          beginTextEdit(d,t,this);
-        }
-      });
-      d.addEventListener('dblclick',e=>{e.stopPropagation();setSelection(this,[],[t.id]);syncTextControlsFromSelection();beginTextEdit(d,t,this);});
-      d.addEventListener('input',()=>{t.text=d.innerText;});
-      d.addEventListener('blur',()=>{if(d.contentEditable==='true'){t.text=d.innerText;d.contentEditable='false';this.save();}});
-      d.addEventListener('keydown',e=>{if(e.key==='Escape'){d.contentEditable='false';d.blur();}});
+          d.style.height='auto';d.style.height=Math.max(28,d.scrollHeight)+'px';
+        });
+        d.addEventListener('blur',()=>{t.text=d.value;this.save();});
+      }else{
+        d.addEventListener('pointerdown',e=>{
+          if(e.pointerType==='touch')return;
+          activeView=this;e.stopPropagation();
+          if(e.pointerType==='mouse'&&e.button!==0)return;
+          if(currentTool==='select'){
+            if(!selectionHasText(this,t.id))setSelection(this,[],[t.id]);
+            const p=this.coords(e);this.beginGroupDrag(e,p);d.setPointerCapture?.(e.pointerId);
+          }
+        });
+        d.addEventListener('click',e=>{e.stopPropagation();if(currentTool==='select'){setSelection(this,[],[t.id]);syncTextControlsFromSelection();}});
+      }
+
       this.textLayer.appendChild(d);
+      if(editing){
+        requestAnimationFrame(()=>{
+          d.style.height='auto';d.style.height=Math.max(28,d.scrollHeight)+'px';
+        });
+      }
     }
     this.updateSelectionVisual();
     if(focusNewest){
-      const last=this.textLayer.lastElementChild;const t=this.data.texts.at(-1);
+      const last=this.textLayer.lastElementChild;
+      const t=this.data.texts.at(-1);
       if(last&&t){
         setSelection(this,[],[t.id]);syncTextControlsFromSelection();
-        if(!matchMedia('(pointer: coarse)').matches)beginTextEdit(last,t,this,true);
+        if(last.tagName==='TEXTAREA'){
+          requestAnimationFrame(()=>last.focus({preventScroll:true}));
+        }
       }
     }
   }
@@ -284,7 +320,14 @@ function beginTextEdit(note,t,view,selectAll=false){note.contentEditable='true';
 function applyControlsToSelected(){const ts=selectedTexts();if(!ts.length)return;const view=selection.view;for(const t of ts){t.font=textFont.value;t.size=Math.max(6,Math.min(72,Number(textSize.value)||12));t.bold=textBoldOn;t.color=penColor.value;const n=view.textLayer.querySelector(`[data-id="${CSS.escape(t.id)}"]`);if(n)applyTextStyle(n,t);}textSize.value=ts[0].size;view.save();}
 async function deleteSelected(){if(!selection.view||selectionCount()===0)return;const view=selection.view;view.snapshot();const ids=new Set(selection.textIds);view.data.texts=view.data.texts.filter(t=>!ids.has(t.id));const idxs=[...selection.strokeIndexes].sort((a,b)=>b-a);for(const i of idxs)view.data.strokes.splice(i,1);clearSelection();view.redraw();view.renderTexts();await view.save();}
 function refreshToolOptions(){textOptions.hidden=!(currentTool==='text'||selection.textIds.size>0);document.getElementById('deleteSelectionBtn').hidden=selectionCount()===0;document.querySelectorAll('.pen-only').forEach(x=>x.style.display=currentTool==='pen'?'':'none');}
-document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{currentTool=b.dataset.tool;if(currentTool!=='select'&&currentTool!=='text')clearSelection();document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));refreshToolOptions();});
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
+  const previous=currentTool;
+  currentTool=b.dataset.tool;
+  if(currentTool!=='select'&&currentTool!=='text')clearSelection();
+  document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));
+  if((previous==='text')!==(currentTool==='text'))views.forEach(v=>v.renderTexts());
+  refreshToolOptions();
+});
 
 // v15 tablet input:
 // Android finger input uses Touch Events directly.
@@ -347,8 +390,7 @@ viewport.addEventListener('touchstart',e=>{
     return;
   }
   if(e.touches.length===1){
-    const isTextNote=currentTool==='text'&&e.target?.closest?.('.text-note');
-    if(isTextNote)return;
+    if(currentTool==='text'&&e.target?.matches?.('textarea.text-note'))return;
     e.preventDefault();
     const v=pageViewFromTarget(e.target);
     if(v)v.beginFinger(e.touches[0],e.target);
@@ -372,12 +414,14 @@ viewport.addEventListener('touchmove',e=>{
     return;
   }
   if(e.touches.length===1){
+    if(document.activeElement?.matches?.('textarea.text-note'))return;
     e.preventDefault();
     activeView?.moveFinger(e.touches[0]);
   }
 },{capture:true,passive:false});
 
 viewport.addEventListener('touchend',e=>{
+  if(document.activeElement?.matches?.('textarea.text-note'))return;
   e.preventDefault();
   if(fingerGesture){
     if(e.touches.length<2){
