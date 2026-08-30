@@ -19,3 +19,6 @@ Annotations are saved locally on the device. Use the planner's Export annotation
 - Text notes can use Caveat, Darker Grotesque, or Centaur (when Centaur is installed on the device; otherwise a serif fallback is used).
 - Text size and bold controls added.
 - Caveat and Darker Grotesque load from Google Fonts on first online use.
+
+## v5 fix
+Text formatting controls are now truly contextual: they only appear when the Text tool is active or an existing text box is selected. The service worker now prefers fresh GitHub files while online, using the cache only as an offline fallback, so development updates should require far less cache-clearing nonsense.
