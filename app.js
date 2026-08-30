@@ -25,42 +25,99 @@ let textEditState=null; // {view,textId,x,y,newText}
 function openTextEditor(view,{textId=null,x=null,y=null}={}){
   activeView=view;
   const existing=textId ? view.data.texts.find(t=>t.id===textId) : null;
-  textEditState={view,textId,x,y,newText:!existing};
-  textEditArea.value=existing?.text||'';
+
+  if(existing){
+    textEditState={
+      view,
+      textId,
+      newText:false,
+      original:{...existing}
+    };
+    setSelection(view,[],[textId]);
+    syncTextControlsFromSelection();
+    textEditArea.value=existing.text||'';
+  }else{
+    const t={
+      id:crypto.randomUUID(),
+      x,y,
+      text:'',
+      font:textFont.value,
+      size:Number(textSize.value||12),
+      bold:textBoldOn,
+      color:penColor.value,
+      draft:true
+    };
+    view.snapshot();
+    view.data.texts.push(t);
+    textEditState={view,textId:t.id,newText:true,original:null};
+    setSelection(view,[],[t.id]);
+    textEditArea.value='';
+    view.renderTexts();
+  }
+
   textEditArea.style.height='auto';
   textEditBar.hidden=false;
+
   requestAnimationFrame(()=>{
-    textEditArea.style.height=Math.min(120,Math.max(38,textEditArea.scrollHeight))+'px';
+    textEditArea.style.height=Math.min(96,Math.max(38,textEditArea.scrollHeight))+'px';
     textEditArea.focus({preventScroll:true});
-    try{const end=textEditArea.value.length;textEditArea.setSelectionRange(end,end);}catch{}
+    try{
+      const end=textEditArea.value.length;
+      textEditArea.setSelectionRange(end,end);
+    }catch{}
   });
 }
-function closeTextEditor(){
+
+function closeTextEditor({cancel=false}={}){
+  const s=textEditState;
+  if(s&&cancel){
+    const view=s.view;
+    if(s.newText){
+      view.data.texts=view.data.texts.filter(t=>t.id!==s.textId);
+      clearSelection();
+    }else{
+      const t=view.data.texts.find(x=>x.id===s.textId);
+      if(t&&s.original)Object.assign(t,s.original);
+    }
+    view.renderTexts();
+    view.save();
+  }
   textEditState=null;
   textEditBar.hidden=true;
   textEditArea.blur();
   textEditArea.value='';
   textEditArea.style.height='';
 }
+
 async function commitTextEditor(){
   const s=textEditState;if(!s)return;
-  const value=textEditArea.value.trimEnd();
   const view=s.view;
-  if(s.textId){
-    const t=view.data.texts.find(x=>x.id===s.textId);
-    if(t){
-      view.snapshot();
-      if(value.trim()===''){view.data.texts=view.data.texts.filter(x=>x.id!==s.textId);clearSelection();}
-      else t.text=value;
+  const t=view.data.texts.find(x=>x.id===s.textId);
+
+  if(t){
+    t.text=textEditArea.value.trimEnd();
+    delete t.draft;
+    if(t.text.trim()===''){
+      view.data.texts=view.data.texts.filter(x=>x.id!==s.textId);
+      clearSelection();
     }
-  }else if(value.trim()!==''){
-    view.snapshot();
-    const t={id:crypto.randomUUID(),x:s.x,y:s.y,text:value,font:textFont.value,size:Number(textSize.value||12),bold:textBoldOn,color:penColor.value};
-    view.data.texts.push(t);setSelection(view,[],[t.id]);
   }
   view.renderTexts();
   await view.save();
   closeTextEditor();
+}
+
+function liveUpdateTextEditor(){
+  const s=textEditState;if(!s)return;
+  const t=s.view.data.texts.find(x=>x.id===s.textId);
+  if(!t)return;
+  t.text=textEditArea.value;
+  const node=s.view.textLayer.querySelector(`[data-id="${CSS.escape(s.textId)}"]`);
+  if(node){
+    node.textContent=t.text || 'Type here';
+    applyTextStyle(node,t);
+  }
+  s.view.updateSelectionVisual();
 }
 
 // IndexedDB
@@ -258,10 +315,10 @@ class PageView{
       const d=document.createElement('div');
       d.className='text-note';
       d.tabIndex=0;
-      d.dataset.id=t.id;
+      d.dataset.id=t.id;if(t.draft)d.dataset.draft='true';
       d.style.left=(t.x*100)+'%';
       d.style.top=(t.y*100)+'%';
-      d.textContent=t.text;
+      d.textContent=t.text || (t.draft?'Type here':'');
       applyTextStyle(d,t);
 
       d.addEventListener('pointerdown',e=>{
@@ -510,9 +567,19 @@ viewport.addEventListener('touchcancel',e=>{
 },{capture:true,passive:false});
 
 
-document.getElementById('textEditSave').addEventListener('click',async e=>{e.preventDefault();await commitTextEditor();});
-document.getElementById('textEditCancel').addEventListener('click',e=>{e.preventDefault();closeTextEditor();});
-textEditArea.addEventListener('input',()=>{textEditArea.style.height='auto';textEditArea.style.height=Math.min(120,Math.max(38,textEditArea.scrollHeight))+'px';});
+document.getElementById('textEditSave').addEventListener('click',async e=>{
+  e.preventDefault();
+  await commitTextEditor();
+});
+document.getElementById('textEditCancel').addEventListener('click',e=>{
+  e.preventDefault();
+  closeTextEditor({cancel:true});
+});
+textEditArea.addEventListener('input',()=>{
+  textEditArea.style.height='auto';
+  textEditArea.style.height=Math.min(96,Math.max(38,textEditArea.scrollHeight))+'px';
+  liveUpdateTextEditor();
+});
 
 textBold.onclick=()=>{textBoldOn=!textBoldOn;textBold.classList.toggle('active',textBoldOn);applyControlsToSelected();};
 [textFont,textSize,penColor].forEach(el=>el.addEventListener('change',applyControlsToSelected));textSize.addEventListener('input',applyControlsToSelected);

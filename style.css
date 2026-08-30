@@ -154,3 +154,26 @@ textarea.text-note{
 #textEditArea{flex:1;min-width:0;min-height:38px;max-height:120px;resize:none;overflow:auto;border:0;outline:0;border-radius:10px;background:rgba(255,255,255,.86);color:var(--ink);padding:7px 10px;font:20px/1.25 "Caveat",cursive;user-select:text;-webkit-user-select:text;touch-action:manipulation;caret-color:var(--ink)}
 .text-edit-icon{flex:0 0 38px;width:38px;height:38px;padding:0;border-radius:10px;font-size:1.25rem;line-height:1}
 .text-edit-icon.ghost{background:#eee8f4;color:var(--ink)}
+
+
+/* v23: stable top text editor with live on-page preview */
+.text-edit-bar{
+  top:62px !important;
+  bottom:auto !important;
+  align-items:center;
+  width:min(680px,calc(100vw - 24px));
+}
+#textEditArea{
+  max-height:96px;
+}
+.text-note[data-draft="true"]{
+  opacity:.7;
+}
+@media(max-width:760px){
+  .text-edit-bar{
+    top:58px !important;
+    bottom:auto !important;
+    width:calc(100vw - 12px);
+    border-radius:12px;
+  }
+}
