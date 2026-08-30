@@ -94,35 +94,3 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
 /* v15 tablet test */
 .viewport.two-finger-panning{cursor:grabbing}
 .build-badge{font-size:.7rem;opacity:.55;margin-left:.4rem;font-weight:600}
-
-
-/* v16 diagnostic banner: deliberately impossible to hide on tablet. */
-.build-badge{
-  display:inline-block !important;
-  margin-left:.45rem;
-  padding:.12rem .38rem;
-  border-radius:6px;
-  background:#34223f;
-  color:white;
-  font-size:.68rem;
-  line-height:1.2;
-  vertical-align:middle;
-}
-.input-diag{
-  position:fixed;
-  top:54px;
-  left:0;
-  right:0;
-  z-index:45;
-  min-height:30px;
-  padding:6px 10px;
-  background:#fff4bf;
-  color:#30253a;
-  border-bottom:1px solid rgba(52,34,63,.18);
-  font:600 11px/1.25 system-ui,sans-serif;
-  white-space:normal;
-}
-.viewport{padding-top:44px}
-@media(max-width:760px){
-  .brand .build-badge{display:inline-block !important}
-}
