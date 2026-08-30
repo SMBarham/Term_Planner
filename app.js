@@ -411,7 +411,7 @@ let fingerGesture=null;
 let pendingTextTap=null;
 let stylusSeen=false;
 let pageZoom=Number(localStorage.getItem('planner-zoom')||1);
-const MIN_ZOOM=.75, MAX_ZOOM=3;
+const MIN_ZOOM=.5, MAX_ZOOM=4;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 function touchMetrics(list){
   if(list.length<2)return null;
