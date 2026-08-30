@@ -38,3 +38,16 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
 .dialog-card{padding:22px;min-width:min(88vw,420px);display:flex;flex-direction:column;gap:12px}.dialog-card h2{margin:0 0 4px}.dialog-card hr{width:100%;border:0;border-top:1px solid #ddd2e6}.small{font-size:.85rem;opacity:.7;margin:0}.status{min-height:1.2em}.jump-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.jump-grid button{background:#eee8f4;color:var(--ink)}.close-btn{background:#ddd4e5;color:var(--ink)}.danger{background:#9b3655}.file-btn{display:block;text-align:center;background:var(--purple);color:white;padding:.65rem .9rem;border-radius:12px;cursor:pointer}.file-btn input{display:none}
 @media (max-width:760px){.brand span{display:none}.tool-dock{top:auto;bottom:74px;left:50%;transform:translateX(-50%);flex-direction:row}.size-control{width:72px;height:42px}.size-control input{transform:none;width:65px}.viewport{padding-left:6px;padding-right:6px}.pages-host.spread{gap:5px}.pages-host.spread .page-view{max-width:calc((100vw - 17px)/2)}}
 @media (orientation:portrait) and (max-width:900px){.pages-host.spread{flex-direction:column;align-items:center}.pages-host.spread .page-view{max-width:min(94vw,850px)}}
+
+
+/* v3: planner font + hand-drawn toolbar refinements */
+.tool svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round;display:block;margin:auto}
+.hand-T{font-family:"Caveat",cursive;font-size:1.65rem;font-weight:700;line-height:1}
+.text-options{display:flex;flex-direction:column;gap:5px;padding-top:2px;border-top:1px solid rgba(52,34,63,.12)}
+.text-options select{width:118px;max-width:118px;border:1px solid #c9bfd5;border-radius:8px;background:#fff;color:var(--ink);padding:5px 6px;font-size:.77rem}
+.text-row{display:flex;gap:5px}.text-row select{width:70px}.mini-toggle{width:42px;height:32px;padding:0;background:#eee8f4;color:var(--ink);font-family:serif;font-weight:700}.mini-toggle.active{background:var(--purple);color:#fff}
+.font-centaur{font-family:Centaur,"Times New Roman",Georgia,serif}
+.font-caveat{font-family:"Caveat",cursive}
+.font-darker{font-family:"Darker Grotesque",sans-serif}
+.text-note{font-family:"Caveat",cursive;font-size:18px}
+@media (max-width:760px){.text-options{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);background:var(--bar);padding:7px;border:1px solid rgba(52,34,63,.12);border-radius:12px;box-shadow:var(--shadow)}.text-options select{width:130px;max-width:130px}.text-row select{width:78px}}

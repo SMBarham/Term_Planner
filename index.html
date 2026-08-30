@@ -11,6 +11,9 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Darker+Grotesque:wght@300..900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -34,12 +37,31 @@
   </nav>
 
   <div class="tool-dock" id="toolDock">
-    <button data-tool="pen" class="tool active" title="Pen">✎</button>
-    <button data-tool="eraser" class="tool" title="Eraser">⌫</button>
-    <button data-tool="text" class="tool" title="Add typed note">T</button>
-    <button id="undoBtn" class="tool" title="Undo">↶</button>
-    <label class="size-control" title="Pen size"><input id="penSize" type="range" min="1" max="12" value="3" /></label>
-    <input id="penColor" type="color" value="#34223f" title="Pen colour" />
+    <button data-tool="pen" class="tool active" title="Pen" aria-label="Pen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4.4-1 10.2-10.2-3.4-3.4L5 15.6 4 20Z"/><path d="m13.9 6.7 3.4 3.4"/><path d="M4 20l3.2-3.2"/></svg>
+    </button>
+    <button data-tool="eraser" class="tool" title="Eraser" aria-label="Eraser">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.2 17.8-4-4a2 2 0 0 1 0-2.8l7.1-7.1a2 2 0 0 1 2.8 0l5.9 5.9a2 2 0 0 1 0 2.8l-5.2 5.2H8.2Z"/><path d="m10 8 6 6"/><path d="M8.2 17.8h11.2"/></svg>
+    </button>
+    <button data-tool="text" class="tool text-tool" title="Add text" aria-label="Add text"><span class="hand-T">T</span></button>
+    <button id="undoBtn" class="tool" title="Undo" aria-label="Undo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4.5 11.5 9 16"/><path d="M5 11.5h8.5a5.5 5.5 0 0 1 5.5 5.5"/></svg>
+    </button>
+    <label class="size-control pen-only" title="Pen size"><input id="penSize" type="range" min="1" max="12" value="3" /></label>
+    <input id="penColor" type="color" value="#34223f" title="Ink / text colour" />
+    <div id="textOptions" class="text-options" hidden>
+      <select id="textFont" title="Text font">
+        <option value="centaur">Centaur</option>
+        <option value="caveat" selected>Caveat</option>
+        <option value="darker">Darker Grotesque</option>
+      </select>
+      <div class="text-row">
+        <select id="textSize" title="Text size">
+          <option value="14">14</option><option value="16">16</option><option value="18" selected>18</option><option value="22">22</option><option value="28">28</option><option value="34">34</option>
+        </select>
+        <button id="textBold" class="mini-toggle" type="button" title="Bold">B</button>
+      </div>
+    </div>
   </div>
 
   <dialog id="sectionDialog">

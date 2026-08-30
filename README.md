@@ -13,3 +13,9 @@ This version bundles all 145 planner page images into **one `pages-data.js` file
 The large `pages-data.js` file is normal: it contains all 145 page backgrounds.
 
 Annotations are saved locally on the device. Use the planner's Export annotation backup option periodically.
+
+## v3 changes
+- Planner-style pen, eraser and undo icons.
+- Text notes can use Caveat, Darker Grotesque, or Centaur (when Centaur is installed on the device; otherwise a serif fallback is used).
+- Text size and bold controls added.
+- Caveat and Darker Grotesque load from Google Fonts on first online use.
