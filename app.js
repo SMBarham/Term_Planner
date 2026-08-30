@@ -5,6 +5,7 @@ let spreadMode=localStorage.getItem('planner-spread')==='true';
 let currentTool='pen';
 let activeView=null;
 const host=document.getElementById('pagesHost');
+const viewport=document.getElementById('viewport');
 const pageInput=document.getElementById('pageInput');
 const spreadBtn=document.getElementById('spreadBtn');
 const penColor=document.getElementById('penColor');
@@ -199,7 +200,26 @@ function beginTextEdit(note,t,view,selectAll=false){note.contentEditable='true';
 function applyControlsToSelected(){const ts=selectedTexts();if(!ts.length)return;const view=selection.view;for(const t of ts){t.font=textFont.value;t.size=Math.max(6,Math.min(72,Number(textSize.value)||12));t.bold=textBoldOn;t.color=penColor.value;const n=view.textLayer.querySelector(`[data-id="${CSS.escape(t.id)}"]`);if(n)applyTextStyle(n,t);}textSize.value=ts[0].size;view.save();}
 async function deleteSelected(){if(!selection.view||selectionCount()===0)return;const view=selection.view;view.snapshot();const ids=new Set(selection.textIds);view.data.texts=view.data.texts.filter(t=>!ids.has(t.id));const idxs=[...selection.strokeIndexes].sort((a,b)=>b-a);for(const i of idxs)view.data.strokes.splice(i,1);clearSelection();view.redraw();view.renderTexts();await view.save();}
 function refreshToolOptions(){textOptions.hidden=!(currentTool==='text'||selection.textIds.size>0);document.getElementById('deleteSelectionBtn').hidden=selectionCount()===0;document.querySelectorAll('.pen-only').forEach(x=>x.style.display=currentTool==='pen'?'':'none');}
-document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{currentTool=b.dataset.tool;if(currentTool!=='select'&&currentTool!=='text')clearSelection();document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));refreshToolOptions();});
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{currentTool=b.dataset.tool;if(currentTool!=='select'&&currentTool!=='text')clearSelection();document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));viewport.classList.toggle('hand-mode',currentTool==='hand');refreshToolOptions();});
+
+// Hand tool: drag anywhere in the planner viewport to pan without creating annotations.
+let panState=null;
+viewport.addEventListener('pointerdown',e=>{
+  if(currentTool!=='hand'||e.button>0)return;
+  e.preventDefault();
+  panState={id:e.pointerId,x:e.clientX,y:e.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};
+  viewport.classList.add('panning');
+  viewport.setPointerCapture?.(e.pointerId);
+});
+viewport.addEventListener('pointermove',e=>{
+  if(!panState||e.pointerId!==panState.id)return;
+  e.preventDefault();
+  viewport.scrollLeft=panState.left-(e.clientX-panState.x);
+  viewport.scrollTop=panState.top-(e.clientY-panState.y);
+});
+const endPan=e=>{if(!panState||e.pointerId!==panState.id)return;panState=null;viewport.classList.remove('panning');};
+viewport.addEventListener('pointerup',endPan);
+viewport.addEventListener('pointercancel',endPan);
 textBold.onclick=()=>{textBoldOn=!textBoldOn;textBold.classList.toggle('active',textBoldOn);applyControlsToSelected();};
 [textFont,textSize,penColor].forEach(el=>el.addEventListener('change',applyControlsToSelected));textSize.addEventListener('input',applyControlsToSelected);
 document.getElementById('textSizeDown').onclick=()=>{textSize.value=Math.max(6,(Number(textSize.value)||12)-1);applyControlsToSelected();};

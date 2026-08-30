@@ -36,3 +36,7 @@ Existing text boxes can now be dragged to reposition them. Single click/tap sele
 
 ## v8 selection
 The Select tool now works for both typed text and handwriting. Draw a freehand lasso around any combination of text boxes and pen strokes, then drag the selection together or delete it with the trash button. Clicking an individual item selects just that item.
+
+
+## v11
+Adds a Hand/Pan tool. Select the hand icon, then drag the planner to pan without drawing, selecting, or moving annotations.
