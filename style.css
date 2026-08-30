@@ -55,7 +55,7 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
 
 /* v4: contextual, genuinely editable text */
 .text-note{border-color:transparent;background:transparent;cursor:text}
-.text-note.selected{border:1px dashed rgba(109,58,168,.65);background:rgba(255,255,255,.30);cursor:grab;touch-action:none}
+.text-note.selected{border-color:transparent;background:rgba(255,255,255,.30);cursor:grab;touch-action:none}
 .text-note.selected.dragging{cursor:grabbing;background:rgba(255,255,255,.48)}
 .text-note[contenteditable="true"]{border-style:solid;background:rgba(255,255,255,.78);cursor:text}
 .font-size-control{display:flex;align-items:center;gap:3px}
@@ -74,3 +74,17 @@ dialog::backdrop{background:rgba(20,14,27,.45);backdrop-filter:blur(3px)}
 .text-note.selected{outline:none}
 .tool[data-tool="select"]{position:relative}
 .tool[data-tool="select"]::after{content:"";position:absolute;inset:7px;border:1px dashed currentColor;border-radius:50%;opacity:.45;pointer-events:none}
+
+/* v10: one selection box only. The universal selection outline owns selection chrome. */
+.text-note,
+.text-note.selected,
+.text-note.selected.dragging {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.text-note[contenteditable="true"] {
+  border: 1px solid rgba(109,58,168,.65) !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}

@@ -1,4 +1,4 @@
-const VERSION='term-planner-v8-unified-lasso';
+const VERSION='term-planner-v10-single-selection-chrome';
 const SHELL=['./','./index.html','./style.css','./pages-data.js','./app.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 
 self.addEventListener('install', event => {
