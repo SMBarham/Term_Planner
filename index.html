@@ -56,9 +56,11 @@
         <option value="darker">Darker Grotesque</option>
       </select>
       <div class="text-row">
-        <select id="textSize" title="Text size">
-          <option value="14">14</option><option value="16">16</option><option value="18" selected>18</option><option value="22">22</option><option value="28">28</option><option value="34">34</option>
-        </select>
+        <div class="font-size-control" title="Text size">
+          <button id="textSizeDown" type="button" aria-label="Decrease text size">−</button>
+          <input id="textSize" type="number" min="6" max="72" step="1" value="12" inputmode="numeric" aria-label="Text size" />
+          <button id="textSizeUp" type="button" aria-label="Increase text size">+</button>
+        </div>
         <button id="textBold" class="mini-toggle" type="button" title="Bold">B</button>
       </div>
     </div>
